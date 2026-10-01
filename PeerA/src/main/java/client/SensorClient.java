@@ -75,7 +75,32 @@ public class SensorClient {
         // TODO Paso 3.7: Convertir los bytes recibidos a String UTF-8 usando offset y length,
         // aplicar trim() y retornar la cadena resultante.
 
-        return null; // Reemplazar con su implementación
+        //Paso 3.1:
+        try (DatagramSocket socket = new DatagramSocket()) {
+            
+            //Paso 3.2:
+            socket.setSoTimeout(this.timeoutMs);
+
+            //Paso 3.3:
+            byte[] data = message.getBytes(StandardCharsets.UTF_8);
+            InetAddress address = InetAddress.getByName(this.serverHost);
+            DatagramPacket packet = new DatagramPacket(data, data.length,  address, this.serverPort);
+
+            //Paso 3.4:
+            socket.send(packet);
+
+            //Paso 3.5:
+            byte[] buffer = new byte[1024];
+            DatagramPacket responsePacket = new DatagramPacket(buffer, buffer.length);
+
+            //Paso 3.6:
+            socket.receive(responsePacket);
+
+            //Paso 3.7:
+            String response = new String(responsePacket.getData(), responsePacket.getOffset(), responsePacket.getLength(), StandardCharsets.UTF_8).trim();
+            return response;
+        }
+
     }
 
     public String getServerHost() {
