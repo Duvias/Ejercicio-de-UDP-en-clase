@@ -68,7 +68,7 @@ public class TelemetryProcessor {
         }
 
         // Paso 1.2:
-        String[] messageParts = rawMessage.trim().split(";");
+        String[] messageParts = rawMessage.trim().split(";", -1);
 
         // Paso 1.3:
         if (messageParts[0].trim().equalsIgnoreCase("STATUS")) {
@@ -88,7 +88,11 @@ public class TelemetryProcessor {
         }
 
         // Paso 1.4:
-        if (messageParts.length != 3 || messageParts[0].trim().isEmpty() || messageParts[1].trim().isEmpty() || messageParts[2].trim().isEmpty()) {
+        if (messageParts.length != 3) {
+            return "ERROR;INVALID_FORMAT";
+        }
+
+        if (messageParts[0].trim().isEmpty() || messageParts[1].trim().isEmpty() || messageParts[2].trim().isEmpty()) {
             return "ERROR;INVALID_FORMAT";
         }
 
