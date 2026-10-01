@@ -60,7 +60,95 @@ public class TelemetryProcessor {
         // - Cualquier otro sensorType:
         //     retornar "ERROR;UNKNOWN_SENSOR_TYPE"
 
-        return "ERROR;NOT_IMPLEMENTED"; // Reemplazar con su implementación
+        // return "ERROR;NOT_IMPLEMENTED"; // Reemplazar con su implementación
+
+        // Paso 1.1:
+        if (rawMessage == null || rawMessage.trim().isEmpty()) {
+            return "ERROR;INVALID_FORMAT";
+        }
+
+        // Paso 1.2:
+        String[] messageParts = rawMessage.trim().split(";", -1);
+
+        // Paso 1.3:
+        if (messageParts[0].trim().equalsIgnoreCase("STATUS")) {
+
+            if (messageParts.length != 2 || messageParts[1].trim().isEmpty()) {
+                return "ERROR;INVALID_FORMAT";
+            }
+
+            String deviceId = messageParts[1].trim();
+            TelemetryData data = lastReadings.get(deviceId);
+
+            if (data == null) {
+                return "ERROR;DEVICE_NOT_FOUND";
+            }
+
+            return "STATUS_OK;" + data.getDeviceId() + ";" + data.getSensorType() + ";" + data.getValue();
+        }
+
+        // Paso 1.4:
+        if (messageParts.length != 3) {
+            return "ERROR;INVALID_FORMAT";
+        }
+
+        if (messageParts[0].trim().isEmpty() || messageParts[1].trim().isEmpty() || messageParts[2].trim().isEmpty()) {
+            return "ERROR;INVALID_FORMAT";
+        }
+
+        String deviceId = messageParts[0].trim();
+        String sensorType = messageParts[1].trim();
+        String valueStr = messageParts[2].trim();
+
+        double value;
+
+        try {
+            value = Double.parseDouble(valueStr);
+        } catch (NumberFormatException e) {
+            return "ERROR;INVALID_FORMAT";
+        }
+
+        // Paso 1.6:
+        String response;
+
+        switch (sensorType) {
+            case "TEMP":
+                if (value > 40.0) {
+                    response = "ALERT;HIGH_TEMPERATURE;" + value;
+                } else if (value < 0.0) {
+                    response = "ALERT;FREEZING_TEMPERATURE;" + value;
+                } else {
+                    response = "OK;TEMP_RECORDED;" + value;
+                }
+                break;
+
+            case "HUMIDITY":
+                if (value > 90.0) {
+                    response = "ALERT;HIGH_HUMIDITY;" + value;
+                } else if (value < 20.0) {
+                    response = "ALERT;LOW_HUMIDITY;" + value;
+                } else {
+                    response = "OK;HUMIDITY_RECORDED;" + value;
+                }
+                break;
+
+            case "BATTERY":
+                if (value < 20.0) {
+                    response = "ALERT;LOW_BATTERY;" + value;
+                } else {
+                    response = "OK;BATTERY_OK;" + value;
+                }
+                break;
+
+            default:
+                return "ERROR;UNKNOWN_SENSOR_TYPE";
+        }
+
+        // Paso 1.5:
+        lastReadings.put(deviceId,new TelemetryData(deviceId, sensorType, value));
+
+        return response;
+
     }
 
     public Map<String, TelemetryData> getLastReadings() {
